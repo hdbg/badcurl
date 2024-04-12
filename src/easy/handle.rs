@@ -15,6 +15,8 @@ use crate::easy::{Easy2, Handler};
 use crate::easy::{Form, List};
 use crate::Error;
 
+use super::Profile;
+
 /// Raw bindings to a libcurl "easy session".
 ///
 /// This type is the same as the `Easy2` type in this library except that it
@@ -1433,6 +1435,14 @@ impl Easy {
     /// Same as [`Easy2::unpause_write`](struct.Easy2.html#method.unpause_write)
     pub fn unpause_write(&self) -> Result<(), Error> {
         self.inner.unpause_write()
+    }
+
+    /// Same as [`Easy2::impersonate`](struct.Easy2.html#method.impersonate)
+
+    pub fn impersonate(&mut self, impersonate: Profile, include_headers: bool) -> Result<(), Error> {
+        let profile_str = impersonate.into();
+
+        self.inner.impersonate(profile_str, include_headers)
     }
 
     /// Same as [`Easy2::url_encode`](struct.Easy2.html#method.url_encode)

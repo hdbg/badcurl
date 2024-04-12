@@ -9,6 +9,8 @@ extern crate libz_sys;
 #[cfg(link_openssl)]
 extern crate rustls_ffi;
 
+use std::ffi::CStr;
+
 use libc::c_ulong;
 use libc::{c_char, c_double, c_int, c_long, c_short, c_uint, c_void, size_t, time_t};
 
@@ -1160,6 +1162,12 @@ extern "C" {
         sockfd: curl_socket_t,
         sockp: *mut c_void,
     ) -> CURLMcode;
+
+    pub fn curl_easy_impersonate(
+        curl: *mut CURL,
+        target: *const c_char,
+        default_headers: c_int
+    ) -> CURLcode;
 }
 
 pub fn rust_crate_version() -> &'static str {

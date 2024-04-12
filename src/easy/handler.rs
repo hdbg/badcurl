@@ -558,6 +558,51 @@ pub enum NetRc {
     Required = badcurl_sys::CURL_NETRC_REQUIRED as isize,
 }
 
+/// Profile to impersonate
+#[derive(Debug, Clone, Copy)]
+#[allow(missing_docs)]
+pub enum Profile {
+    Chrome100,
+    Chrome101,
+    Chrome104,
+    Chrome107,
+    Chrome110,
+    Chrome116,
+    Chrome119,
+    Chrome120,
+    Chrome99,
+    Chrome99Android,
+    Edge101,
+    Edge99,
+    Safari15_3,
+    Safari15_5,
+    Safari17_0,
+    Safari17_2Ios,
+}
+
+impl Into<&str> for Profile {
+    fn into(self) -> &'static str {
+        match self {
+            Profile::Chrome100 => "chrome100",
+            Profile::Chrome101 => "chrome101",
+            Profile::Chrome104 => "chrome104",
+            Profile::Chrome107 => "chrome107",
+            Profile::Chrome110 => "chrome110",
+            Profile::Chrome116 => "chrome116",
+            Profile::Chrome119 => "chrome119",
+            Profile::Chrome120 => "chrome120",
+            Profile::Chrome99 => "chrome99",
+            Profile::Chrome99Android => "chrome99android",
+            Profile::Edge101 => "edge101",
+            Profile::Edge99 => "edge99",
+            Profile::Safari15_3 => "safari15_3",
+            Profile::Safari15_5 => "safari15_5",
+            Profile::Safari17_0 => "safari17_0",
+            Profile::Safari17_2Ios => "safari17_2_ios",
+        }
+    }
+}
+
 /// Structure which stores possible authentication methods to get passed to
 /// `http_auth` and `proxy_auth`.
 #[derive(Clone)]
@@ -1109,7 +1154,10 @@ impl<H> Easy2<H> {
     /// By default this option is 60s and corresponds to
     /// `CURLOPT_DNS_CACHE_TIMEOUT`.
     pub fn dns_cache_timeout(&mut self, dur: Duration) -> Result<(), Error> {
-        self.setopt_long(badcurl_sys::CURLOPT_DNS_CACHE_TIMEOUT, dur.as_secs() as c_long)
+        self.setopt_long(
+            badcurl_sys::CURLOPT_DNS_CACHE_TIMEOUT,
+            dur.as_secs() as c_long,
+        )
     }
 
     /// Provide the DNS-over-HTTPS URL.
@@ -1516,7 +1564,10 @@ impl<H> Easy2<H> {
     pub fn post_fields_copy(&mut self, data: &[u8]) -> Result<(), Error> {
         // Set the length before the pointer so libcurl knows how much to read
         self.post_field_size(data.len() as u64)?;
-        self.setopt_ptr(badcurl_sys::CURLOPT_COPYPOSTFIELDS, data.as_ptr() as *const _)
+        self.setopt_ptr(
+            badcurl_sys::CURLOPT_COPYPOSTFIELDS,
+            data.as_ptr() as *const _,
+        )
     }
 
     /// Configures the size of data that's going to be uploaded as part of a
@@ -1742,7 +1793,10 @@ impl<H> Easy2<H> {
     /// By default this option is `true` and corresponds to
     /// `CURLOPT_HTTP_TRANSFER_DECODING`.
     pub fn http_transfer_decoding(&mut self, enable: bool) -> Result<(), Error> {
-        self.setopt_long(badcurl_sys::CURLOPT_HTTP_TRANSFER_DECODING, enable as c_long)
+        self.setopt_long(
+            badcurl_sys::CURLOPT_HTTP_TRANSFER_DECODING,
+            enable as c_long,
+        )
     }
 
     // /// Timeout for the Expect: 100-continue response
@@ -2013,7 +2067,10 @@ impl<H> Easy2<H> {
     ///
     /// By default, a value of 118 seconds is used.
     pub fn maxage_conn(&mut self, max_age: Duration) -> Result<(), Error> {
-        self.setopt_long(badcurl_sys::CURLOPT_MAXAGE_CONN, max_age.as_secs() as c_long)
+        self.setopt_long(
+            badcurl_sys::CURLOPT_MAXAGE_CONN,
+            max_age.as_secs() as c_long,
+        )
     }
 
     /// Force a new connection to be used.
@@ -3225,7 +3282,8 @@ impl<H> Easy2<H> {
     /// this function returns.
     pub fn unpause_read(&self) -> Result<(), Error> {
         unsafe {
-            let rc = badcurl_sys::curl_easy_pause(self.inner.handle, badcurl_sys::CURLPAUSE_RECV_CONT);
+            let rc =
+                badcurl_sys::curl_easy_pause(self.inner.handle, badcurl_sys::CURLPAUSE_RECV_CONT);
             self.cvt(rc)
         }
     }
@@ -3246,9 +3304,22 @@ impl<H> Easy2<H> {
     /// paused.
     pub fn unpause_write(&self) -> Result<(), Error> {
         unsafe {
-            let rc = badcurl_sys::curl_easy_pause(self.inner.handle, badcurl_sys::CURLPAUSE_SEND_CONT);
+            let rc =
+                badcurl_sys::curl_easy_pause(self.inner.handle, badcurl_sys::CURLPAUSE_SEND_CONT);
             self.cvt(rc)
         }
+    }
+
+    /// Impersonate certain profile
+    /// 
+    /// Sets all necessary options to SSL Context, HTTP/2 send order in order to impersonate a certain profile.
+    /// 
+    /// if `include_headers` is set to `true`, the default headers will be included in the impersonation.
+
+    pub fn impersonate(&mut self, impersonate: Profile, include_headers: bool) -> Result<(), Error> {
+        let profile_str = impersonate.into();
+
+        self.set_impersonate(profile_str, include_headers)
     }
 
     /// URL encodes a string `s`
@@ -3376,6 +3447,19 @@ impl<H> Easy2<H> {
         self.inner.handle
     }
 
+    fn set_impersonate(&mut self, impersonate: &str, include_headers: bool) -> Result<(), Error> {
+        let include_headers = if include_headers { 1 } else { 0 };
+        let s = CString::new(impersonate)?;
+
+        unsafe {
+            self.cvt(badcurl_sys::curl_easy_impersonate(
+                self.inner.handle,
+                s.as_ptr(),
+                include_headers,
+            ))
+        }
+    }
+
     #[cfg(unix)]
     fn setopt_path(&mut self, opt: badcurl_sys::CURLoption, val: &Path) -> Result<(), Error> {
         use std::os::unix::prelude::*;
@@ -3421,7 +3505,13 @@ impl<H> Easy2<H> {
             flags: badcurl_sys::CURL_BLOB_COPY,
         };
         let blob_ptr = &blob as *const badcurl_sys::curl_blob;
-        unsafe { self.cvt(badcurl_sys::curl_easy_setopt(self.inner.handle, opt, blob_ptr)) }
+        unsafe {
+            self.cvt(badcurl_sys::curl_easy_setopt(
+                self.inner.handle,
+                opt,
+                blob_ptr,
+            ))
+        }
     }
 
     fn getopt_bytes(&self, opt: badcurl_sys::CURLINFO) -> Result<Option<&[u8]>, Error> {

@@ -1,4 +1,6 @@
-//! Rust bindings to the libcurl C library
+//! Rust bindings to the libcurl-imperosnate C library
+//! 
+//! Fork of [curl](https://crates.io/crates/curl) crate with support for [libcurl-impersonate](https://github.com/yifeikong/curl-impersonate)
 //!
 //! This crate contains bindings for an HTTP/HTTPS client which is powered by
 //! [libcurl], the same library behind the `curl` command line tool. The API
@@ -52,9 +54,31 @@
 //! The underlying libcurl library must be initialized before use and has
 //! certain requirements on how this is done. Check the documentation for
 //! [`init`] for more details.
+//! 
+//! # Impersonation
+//! This crate supports impersonationg of different browsers. You can see all supported browsers and their versions in 
+//! [`Profile`](easy::Profile) enum.
+//! 
+//! ```rust
+//! use std::io::{stdout, Write};
+//!
+//! use badcurl::easy::{Easy, Profile};
+//!
+//! // Write the contents of rust-lang.org to stdout
+//! let mut easy = Easy::new();
+//! easy.url("https://www.rust-lang.org/").unwrap();
+//! 
+//! easy.impersonate(Profile::Chrome120).unwrap();
+//! 
+//! easy.write_function(|data| {
+//!     stdout().write_all(data).unwrap();
+//!     Ok(data.len())
+//! }).unwrap();
+//! 
+//! easy.perform().unwrap();
+//! ```
 
 #![deny(missing_docs, missing_debug_implementations)]
-#![doc(html_root_url = "https://docs.rs/curl/0.4")]
 
 use std::ffi::CStr;
 use std::str;
