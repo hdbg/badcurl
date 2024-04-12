@@ -2,7 +2,7 @@ use std::env;
 use std::io::{stdout, Write};
 
 use anyhow::{bail, Result};
-use curl::easy::Easy;
+use badcurl::easy::Easy;
 
 fn main() -> Result<()> {
     let argv = env::args().collect::<Vec<_>>();

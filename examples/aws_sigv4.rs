@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use curl::easy::Easy;
+use badcurl::easy::Easy;
 
 fn main() -> Result<()> {
     let mut handle = Easy::new();

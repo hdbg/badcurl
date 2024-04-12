@@ -3,8 +3,8 @@ use std::time::Duration;
 
 use anyhow::Result;
 
-use curl::easy::{Easy2, Handler, WriteError};
-use curl::multi::{Easy2Handle, Multi};
+use badcurl::easy::{Easy2, Handler, WriteError};
+use badcurl::multi::{Easy2Handle, Multi};
 
 const URLS: &[&str] = &[
     "https://www.microsoft.com",
@@ -22,7 +22,7 @@ impl Handler for Collector {
 }
 
 fn download(multi: &mut Multi, token: usize, url: &str) -> Result<Easy2Handle<Collector>> {
-    let version = curl::Version::get();
+    let version = badcurl::Version::get();
     let mut request = Easy2::new(Collector(Vec::new()));
     request.url(&url)?;
     request.useragent(&format!("curl/{}", version.version()))?;

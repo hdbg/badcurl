@@ -13,8 +13,8 @@ macro_rules! t {
     };
 }
 
-use curl::easy::{Easy, Easy2, List, ReadError, Transfer, WriteError};
-use curl::{Error, Version};
+use badcurl::easy::{Easy, Easy2, List, ReadError, Transfer, WriteError};
+use badcurl::{Error, Version};
 
 use crate::server::Server;
 mod server;
@@ -973,7 +973,7 @@ fn path_as_is() {
 
 #[test]
 fn test_connect_timeout() {
-    use curl::easy::Handler;
+    use badcurl::easy::Handler;
     struct Collector(Vec<u8>);
 
     impl Handler for Collector {
@@ -986,7 +986,7 @@ fn test_connect_timeout() {
 
     // Overflow value test must return an Error
     assert_eq!(
-        Error::new(curl_sys::CURLE_BAD_FUNCTION_ARGUMENT),
+        Error::new(badcurl_sys::CURLE_BAD_FUNCTION_ARGUMENT),
         easy2
             .connect_timeout(Duration::from_secs(std::u64::MAX))
             .unwrap_err()
@@ -1003,7 +1003,7 @@ fn test_connect_timeout() {
 
 #[test]
 fn test_timeout() {
-    use curl::easy::Handler;
+    use badcurl::easy::Handler;
     struct Collector(Vec<u8>);
 
     impl Handler for Collector {
@@ -1016,7 +1016,7 @@ fn test_timeout() {
 
     // Overflow value test must return an Error
     assert_eq!(
-        Error::new(curl_sys::CURLE_BAD_FUNCTION_ARGUMENT),
+        Error::new(badcurl_sys::CURLE_BAD_FUNCTION_ARGUMENT),
         easy2
             .timeout(Duration::from_secs(std::u64::MAX))
             .unwrap_err()

@@ -11,8 +11,8 @@ use crate::FormError;
 /// This structure is built up and then passed to the `Easy::httppost` method to
 /// be sent off with a request.
 pub struct Form {
-    head: *mut curl_sys::curl_httppost,
-    tail: *mut curl_sys::curl_httppost,
+    head: *mut badcurl_sys::curl_httppost,
+    tail: *mut badcurl_sys::curl_httppost,
     headers: Vec<List>,
     buffers: Vec<Vec<u8>>,
     strings: Vec<CString>,
@@ -22,11 +22,11 @@ pub struct Form {
 pub struct Part<'form, 'data> {
     form: &'form mut Form,
     name: &'data str,
-    array: Vec<curl_sys::curl_forms>,
+    array: Vec<badcurl_sys::curl_forms>,
     error: Option<FormError>,
 }
 
-pub fn raw(form: &Form) -> *mut curl_sys::curl_httppost {
+pub fn raw(form: &Form) -> *mut badcurl_sys::curl_httppost {
     form.head
 }
 
@@ -51,8 +51,8 @@ impl Form {
             error: None,
             form: self,
             name,
-            array: vec![curl_sys::curl_forms {
-                option: curl_sys::CURLFORM_END,
+            array: vec![badcurl_sys::curl_forms {
+                option: badcurl_sys::CURLFORM_END,
                 value: ptr::null_mut(),
             }],
         }
@@ -69,7 +69,7 @@ impl fmt::Debug for Form {
 impl Drop for Form {
     fn drop(&mut self) {
         unsafe {
-            curl_sys::curl_formfree(self.head);
+            badcurl_sys::curl_formfree(self.head);
         }
     }
 }
@@ -91,15 +91,15 @@ impl<'form, 'data> Part<'form, 'data> {
 
         self.array.insert(
             pos,
-            curl_sys::curl_forms {
-                option: curl_sys::CURLFORM_COPYCONTENTS,
+            badcurl_sys::curl_forms {
+                option: badcurl_sys::CURLFORM_COPYCONTENTS,
                 value: ptr as *mut _,
             },
         );
         self.array.insert(
             pos + 1,
-            curl_sys::curl_forms {
-                option: curl_sys::CURLFORM_CONTENTSLENGTH,
+            badcurl_sys::curl_forms {
+                option: badcurl_sys::CURLFORM_CONTENTSLENGTH,
                 value: contents.len() as *mut _,
             },
         );
@@ -128,8 +128,8 @@ impl<'form, 'data> Part<'form, 'data> {
             let pos = self.array.len() - 1;
             self.array.insert(
                 pos,
-                curl_sys::curl_forms {
-                    option: curl_sys::CURLFORM_FILECONTENT,
+                badcurl_sys::curl_forms {
+                    option: badcurl_sys::CURLFORM_FILECONTENT,
                     value: bytes.as_ptr() as *mut _,
                 },
             );
@@ -170,8 +170,8 @@ impl<'form, 'data> Part<'form, 'data> {
             let pos = self.array.len() - 1;
             self.array.insert(
                 pos,
-                curl_sys::curl_forms {
-                    option: curl_sys::CURLFORM_FILE,
+                badcurl_sys::curl_forms {
+                    option: badcurl_sys::CURLFORM_FILE,
                     value: bytes.as_ptr() as *mut _,
                 },
             );
@@ -192,8 +192,8 @@ impl<'form, 'data> Part<'form, 'data> {
             let pos = self.array.len() - 1;
             self.array.insert(
                 pos,
-                curl_sys::curl_forms {
-                    option: curl_sys::CURLFORM_CONTENTTYPE,
+                badcurl_sys::curl_forms {
+                    option: badcurl_sys::CURLFORM_CONTENTTYPE,
                     value: bytes.as_ptr() as *mut _,
                 },
             );
@@ -222,8 +222,8 @@ impl<'form, 'data> Part<'form, 'data> {
             let pos = self.array.len() - 1;
             self.array.insert(
                 pos,
-                curl_sys::curl_forms {
-                    option: curl_sys::CURLFORM_FILENAME,
+                badcurl_sys::curl_forms {
+                    option: badcurl_sys::CURLFORM_FILENAME,
                     value: bytes.as_ptr() as *mut _,
                 },
             );
@@ -263,23 +263,23 @@ impl<'form, 'data> Part<'form, 'data> {
             let pos = self.array.len() - 1;
             self.array.insert(
                 pos,
-                curl_sys::curl_forms {
-                    option: curl_sys::CURLFORM_BUFFER,
+                badcurl_sys::curl_forms {
+                    option: badcurl_sys::CURLFORM_BUFFER,
                     value: bytes.as_ptr() as *mut _,
                 },
             );
             self.form.strings.push(bytes);
             self.array.insert(
                 pos + 1,
-                curl_sys::curl_forms {
-                    option: curl_sys::CURLFORM_BUFFERPTR,
+                badcurl_sys::curl_forms {
+                    option: badcurl_sys::CURLFORM_BUFFERPTR,
                     value: data.as_ptr() as *mut _,
                 },
             );
             self.array.insert(
                 pos + 2,
-                curl_sys::curl_forms {
-                    option: curl_sys::CURLFORM_BUFFERLENGTH,
+                badcurl_sys::curl_forms {
+                    option: badcurl_sys::CURLFORM_BUFFERLENGTH,
                     value: length as *mut _,
                 },
             );
@@ -295,8 +295,8 @@ impl<'form, 'data> Part<'form, 'data> {
         let pos = self.array.len() - 1;
         self.array.insert(
             pos,
-            curl_sys::curl_forms {
-                option: curl_sys::CURLFORM_CONTENTHEADER,
+            badcurl_sys::curl_forms {
+                option: badcurl_sys::CURLFORM_CONTENTHEADER,
                 value: list::raw(&headers) as *mut _,
             },
         );
@@ -313,19 +313,19 @@ impl<'form, 'data> Part<'form, 'data> {
             return Err(err);
         }
         let rc = unsafe {
-            curl_sys::curl_formadd(
+            badcurl_sys::curl_formadd(
                 &mut self.form.head,
                 &mut self.form.tail,
-                curl_sys::CURLFORM_COPYNAME,
+                badcurl_sys::CURLFORM_COPYNAME,
                 self.name.as_ptr(),
-                curl_sys::CURLFORM_NAMELENGTH,
+                badcurl_sys::CURLFORM_NAMELENGTH,
                 self.name.len(),
-                curl_sys::CURLFORM_ARRAY,
+                badcurl_sys::CURLFORM_ARRAY,
                 self.array.as_ptr(),
-                curl_sys::CURLFORM_END,
+                badcurl_sys::CURLFORM_END,
             )
         };
-        if rc == curl_sys::CURL_FORMADD_OK {
+        if rc == badcurl_sys::CURL_FORMADD_OK {
             Ok(())
         } else {
             Err(FormError::new(rc))
@@ -344,7 +344,7 @@ impl<'form, 'data> Part<'form, 'data> {
             Some(bytes) => self.bytes2cstr(bytes.as_bytes()),
             None if self.error.is_none() => {
                 // TODO: better error code
-                self.error = Some(FormError::new(curl_sys::CURL_FORMADD_INCOMPLETE));
+                self.error = Some(FormError::new(badcurl_sys::CURL_FORMADD_INCOMPLETE));
                 None
             }
             None => None,
@@ -356,7 +356,7 @@ impl<'form, 'data> Part<'form, 'data> {
             Ok(c) => Some(c),
             Err(..) if self.error.is_none() => {
                 // TODO: better error code
-                self.error = Some(FormError::new(curl_sys::CURL_FORMADD_INCOMPLETE));
+                self.error = Some(FormError::new(badcurl_sys::CURL_FORMADD_INCOMPLETE));
                 None
             }
             Err(..) => None,

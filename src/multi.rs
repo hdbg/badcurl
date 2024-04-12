@@ -35,7 +35,7 @@ pub struct Multi {
 
 #[derive(Debug)]
 struct RawMulti {
-    handle: *mut curl_sys::CURLM,
+    handle: *mut badcurl_sys::CURLM,
 }
 
 struct MultiData {
@@ -47,7 +47,7 @@ struct MultiData {
 ///
 /// Currently only indicates whether a transfer is done.
 pub struct Message<'multi> {
-    ptr: *mut curl_sys::CURLMsg,
+    ptr: *mut badcurl_sys::CURLMsg,
     _multi: &'multi Multi,
 }
 
@@ -81,7 +81,7 @@ pub struct Easy2Handle<H> {
 /// called on an easy handle, either manually or on drop.
 struct DetachGuard {
     multi: Arc<RawMulti>,
-    easy: *mut curl_sys::CURL,
+    easy: *mut badcurl_sys::CURL,
 }
 
 /// Notification of the events that have happened on a socket.
@@ -101,11 +101,11 @@ pub struct SocketEvents {
 }
 
 /// Raw underlying socket type that the multi handles use
-pub type Socket = curl_sys::curl_socket_t;
+pub type Socket = badcurl_sys::curl_socket_t;
 
 /// File descriptor to wait on for use with the `wait` method on a multi handle.
 pub struct WaitFd {
-    inner: curl_sys::curl_waitfd,
+    inner: badcurl_sys::curl_waitfd,
 }
 
 /// A handle that can be used to wake up a thread that's blocked in [Multi::poll].
@@ -128,7 +128,7 @@ impl Multi {
     pub fn new() -> Multi {
         unsafe {
             crate::init();
-            let ptr = curl_sys::curl_multi_init();
+            let ptr = badcurl_sys::curl_multi_init();
             assert!(!ptr.is_null());
             Multi {
                 raw: Arc::new(RawMulti { handle: ptr }),
@@ -166,19 +166,19 @@ impl Multi {
         f: Box<dyn FnMut(Socket, SocketEvents, usize) + Send>,
     ) -> Result<(), MultiError> {
         self.data.socket = f;
-        let cb: curl_sys::curl_socket_callback = cb;
+        let cb: badcurl_sys::curl_socket_callback = cb;
         self.setopt_ptr(
-            curl_sys::CURLMOPT_SOCKETFUNCTION,
+            badcurl_sys::CURLMOPT_SOCKETFUNCTION,
             cb as usize as *const c_char,
         )?;
         let ptr = &*self.data as *const _;
-        self.setopt_ptr(curl_sys::CURLMOPT_SOCKETDATA, ptr as *const c_char)?;
+        self.setopt_ptr(badcurl_sys::CURLMOPT_SOCKETDATA, ptr as *const c_char)?;
         return Ok(());
 
         // TODO: figure out how to expose `_easy`
         extern "C" fn cb(
-            _easy: *mut curl_sys::CURL,
-            socket: curl_sys::curl_socket_t,
+            _easy: *mut badcurl_sys::CURL,
+            socket: badcurl_sys::curl_socket_t,
             what: c_int,
             userptr: *mut c_void,
             socketp: *mut c_void,
@@ -225,7 +225,7 @@ impl Multi {
     /// ourselves.
     pub fn assign(&self, socket: Socket, token: usize) -> Result<(), MultiError> {
         unsafe {
-            cvt(curl_sys::curl_multi_assign(
+            cvt(badcurl_sys::curl_multi_assign(
                 self.raw.handle,
                 socket,
                 token as *mut _,
@@ -265,18 +265,18 @@ impl Multi {
         f: Box<dyn FnMut(Option<Duration>) -> bool + Send>,
     ) -> Result<(), MultiError> {
         self.data.timer = f;
-        let cb: curl_sys::curl_multi_timer_callback = cb;
+        let cb: badcurl_sys::curl_multi_timer_callback = cb;
         self.setopt_ptr(
-            curl_sys::CURLMOPT_TIMERFUNCTION,
+            badcurl_sys::CURLMOPT_TIMERFUNCTION,
             cb as usize as *const c_char,
         )?;
         let ptr = &*self.data as *const _;
-        self.setopt_ptr(curl_sys::CURLMOPT_TIMERDATA, ptr as *const c_char)?;
+        self.setopt_ptr(badcurl_sys::CURLMOPT_TIMERDATA, ptr as *const c_char)?;
         return Ok(());
 
         // TODO: figure out how to expose `_multi`
         extern "C" fn cb(
-            _multi: *mut curl_sys::CURLM,
+            _multi: *mut badcurl_sys::CURLM,
             timeout_ms: c_long,
             user: *mut c_void,
         ) -> c_int {
@@ -309,13 +309,13 @@ impl Multi {
     /// request multiplexed over that at the same time as other transfers are
     /// already using that single connection.
     pub fn pipelining(&mut self, http_1: bool, multiplex: bool) -> Result<(), MultiError> {
-        let bitmask = if http_1 { curl_sys::CURLPIPE_HTTP1 } else { 0 }
+        let bitmask = if http_1 { badcurl_sys::CURLPIPE_HTTP1 } else { 0 }
             | if multiplex {
-                curl_sys::CURLPIPE_MULTIPLEX
+                badcurl_sys::CURLPIPE_MULTIPLEX
             } else {
                 0
             };
-        self.setopt_long(curl_sys::CURLMOPT_PIPELINING, bitmask)
+        self.setopt_long(badcurl_sys::CURLMOPT_PIPELINING, bitmask)
     }
 
     /// Sets the max number of connections to a single host.
@@ -327,7 +327,7 @@ impl Multi {
     /// be pending until a connection becomes available. If pipelining is enabled,
     /// libcurl will try to pipeline if the host is capable of it.
     pub fn set_max_host_connections(&mut self, val: usize) -> Result<(), MultiError> {
-        self.setopt_long(curl_sys::CURLMOPT_MAX_HOST_CONNECTIONS, val as c_long)
+        self.setopt_long(badcurl_sys::CURLMOPT_MAX_HOST_CONNECTIONS, val as c_long)
     }
 
     /// Sets the max simultaneously open connections.
@@ -339,7 +339,7 @@ impl Multi {
     /// there are available connections. If pipelining is enabled, libcurl will
     /// try to pipeline or use multiplexing if the host is capable of it.
     pub fn set_max_total_connections(&mut self, val: usize) -> Result<(), MultiError> {
-        self.setopt_long(curl_sys::CURLMOPT_MAX_TOTAL_CONNECTIONS, val as c_long)
+        self.setopt_long(badcurl_sys::CURLMOPT_MAX_TOTAL_CONNECTIONS, val as c_long)
     }
 
     /// Set size of connection cache.
@@ -358,7 +358,7 @@ impl Multi {
     /// See [`set_max_total_connections`](#method.set_max_total_connections) for
     /// limiting the number of active connections.
     pub fn set_max_connects(&mut self, val: usize) -> Result<(), MultiError> {
-        self.setopt_long(curl_sys::CURLMOPT_MAXCONNECTS, val as c_long)
+        self.setopt_long(badcurl_sys::CURLMOPT_MAXCONNECTS, val as c_long)
     }
 
     /// Sets the pipeline length.
@@ -367,7 +367,7 @@ impl Multi {
     /// outstanding requests in an HTTP/1.1 pipelined connection. This option
     /// is only used for HTTP/1.1 pipelining, and not HTTP/2 multiplexing.
     pub fn set_pipeline_length(&mut self, val: usize) -> Result<(), MultiError> {
-        self.setopt_long(curl_sys::CURLMOPT_MAX_PIPELINE_LENGTH, val as c_long)
+        self.setopt_long(badcurl_sys::CURLMOPT_MAX_PIPELINE_LENGTH, val as c_long)
     }
 
     /// Sets the number of max concurrent streams for http2.
@@ -376,19 +376,19 @@ impl Multi {
     /// concurrent streams for a connections that libcurl should support on
     /// connections done using HTTP/2. Defaults to 100.
     pub fn set_max_concurrent_streams(&mut self, val: usize) -> Result<(), MultiError> {
-        self.setopt_long(curl_sys::CURLMOPT_MAX_CONCURRENT_STREAMS, val as c_long)
+        self.setopt_long(badcurl_sys::CURLMOPT_MAX_CONCURRENT_STREAMS, val as c_long)
     }
 
-    fn setopt_long(&mut self, opt: curl_sys::CURLMoption, val: c_long) -> Result<(), MultiError> {
-        unsafe { cvt(curl_sys::curl_multi_setopt(self.raw.handle, opt, val)) }
+    fn setopt_long(&mut self, opt: badcurl_sys::CURLMoption, val: c_long) -> Result<(), MultiError> {
+        unsafe { cvt(badcurl_sys::curl_multi_setopt(self.raw.handle, opt, val)) }
     }
 
     fn setopt_ptr(
         &mut self,
-        opt: curl_sys::CURLMoption,
+        opt: badcurl_sys::CURLMoption,
         val: *const c_char,
     ) -> Result<(), MultiError> {
-        unsafe { cvt(curl_sys::curl_multi_setopt(self.raw.handle, opt, val)) }
+        unsafe { cvt(badcurl_sys::curl_multi_setopt(self.raw.handle, opt, val)) }
     }
 
     /// Add an easy handle to a multi session
@@ -416,7 +416,7 @@ impl Multi {
         easy.transfer();
 
         unsafe {
-            cvt(curl_sys::curl_multi_add_handle(self.raw.handle, easy.raw()))?;
+            cvt(badcurl_sys::curl_multi_add_handle(self.raw.handle, easy.raw()))?;
         }
         Ok(EasyHandle {
             guard: DetachGuard {
@@ -431,7 +431,7 @@ impl Multi {
     /// Same as `add`, but works with the `Easy2` type.
     pub fn add2<H>(&self, easy: Easy2<H>) -> Result<Easy2Handle<H>, MultiError> {
         unsafe {
-            cvt(curl_sys::curl_multi_add_handle(self.raw.handle, easy.raw()))?;
+            cvt(badcurl_sys::curl_multi_add_handle(self.raw.handle, easy.raw()))?;
         }
         Ok(Easy2Handle {
             guard: DetachGuard {
@@ -482,7 +482,7 @@ impl Multi {
         let mut queue = 0;
         unsafe {
             loop {
-                let ptr = curl_sys::curl_multi_info_read(self.raw.handle, &mut queue);
+                let ptr = badcurl_sys::curl_multi_info_read(self.raw.handle, &mut queue);
                 if ptr.is_null() {
                     break;
                 }
@@ -515,7 +515,7 @@ impl Multi {
     pub fn action(&self, socket: Socket, events: &Events) -> Result<u32, MultiError> {
         let mut remaining = 0;
         unsafe {
-            cvt(curl_sys::curl_multi_socket_action(
+            cvt(badcurl_sys::curl_multi_socket_action(
                 self.raw.handle,
                 socket,
                 events.bits,
@@ -543,9 +543,9 @@ impl Multi {
     pub fn timeout(&self) -> Result<u32, MultiError> {
         let mut remaining = 0;
         unsafe {
-            cvt(curl_sys::curl_multi_socket_action(
+            cvt(badcurl_sys::curl_multi_socket_action(
                 self.raw.handle,
-                curl_sys::CURL_SOCKET_BAD,
+                badcurl_sys::CURL_SOCKET_BAD,
                 0,
                 &mut remaining,
             ))?;
@@ -573,7 +573,7 @@ impl Multi {
     pub fn get_timeout(&self) -> Result<Option<Duration>, MultiError> {
         let mut ms = 0;
         unsafe {
-            cvt(curl_sys::curl_multi_timeout(self.raw.handle, &mut ms))?;
+            cvt(badcurl_sys::curl_multi_timeout(self.raw.handle, &mut ms))?;
             if ms == -1 {
                 Ok(None)
             } else {
@@ -596,7 +596,7 @@ impl Multi {
     /// # Example
     ///
     /// ```
-    /// use curl::multi::Multi;
+    /// use badcurl::multi::Multi;
     /// use std::time::Duration;
     ///
     /// let m = Multi::new();
@@ -611,7 +611,7 @@ impl Multi {
         let timeout_ms = Multi::timeout_i32(timeout);
         unsafe {
             let mut ret = 0;
-            cvt(curl_sys::curl_multi_wait(
+            cvt(badcurl_sys::curl_multi_wait(
                 self.raw.handle,
                 waitfds.as_mut_ptr() as *mut _,
                 waitfds.len() as u32,
@@ -656,7 +656,7 @@ impl Multi {
     /// # Example
     ///
     /// ```
-    /// use curl::multi::Multi;
+    /// use badcurl::multi::Multi;
     /// use std::time::Duration;
     ///
     /// let m = Multi::new();
@@ -672,7 +672,7 @@ impl Multi {
         let timeout_ms = Multi::timeout_i32(timeout);
         unsafe {
             let mut ret = 0;
-            cvt(curl_sys::curl_multi_poll(
+            cvt(badcurl_sys::curl_multi_poll(
                 self.raw.handle,
                 waitfds.as_mut_ptr() as *mut _,
                 waitfds.len() as u32,
@@ -733,7 +733,7 @@ impl Multi {
     pub fn perform(&self) -> Result<u32, MultiError> {
         unsafe {
             let mut ret = 0;
-            cvt(curl_sys::curl_multi_perform(self.raw.handle, &mut ret))?;
+            cvt(badcurl_sys::curl_multi_perform(self.raw.handle, &mut ret))?;
             Ok(ret as u32)
         }
     }
@@ -771,16 +771,16 @@ impl Multi {
     /// program NOT wait for sockets it should wait for...
     pub fn fdset2(
         &self,
-        read: Option<&mut curl_sys::fd_set>,
-        write: Option<&mut curl_sys::fd_set>,
-        except: Option<&mut curl_sys::fd_set>,
+        read: Option<&mut badcurl_sys::fd_set>,
+        write: Option<&mut badcurl_sys::fd_set>,
+        except: Option<&mut badcurl_sys::fd_set>,
     ) -> Result<Option<i32>, MultiError> {
         unsafe {
             let mut ret = 0;
             let read = read.map(|r| r as *mut _).unwrap_or(ptr::null_mut());
             let write = write.map(|r| r as *mut _).unwrap_or(ptr::null_mut());
             let except = except.map(|r| r as *mut _).unwrap_or(ptr::null_mut());
-            cvt(curl_sys::curl_multi_fdset(
+            cvt(badcurl_sys::curl_multi_fdset(
                 self.raw.handle,
                 read,
                 write,
@@ -810,7 +810,7 @@ impl Multi {
     }
 
     /// Get a pointer to the raw underlying CURLM handle.
-    pub fn raw(&self) -> *mut curl_sys::CURLM {
+    pub fn raw(&self) -> *mut badcurl_sys::CURLM {
         self.raw.handle
     }
 }
@@ -818,7 +818,7 @@ impl Multi {
 impl Drop for RawMulti {
     fn drop(&mut self) {
         unsafe {
-            let _ = cvt(curl_sys::curl_multi_cleanup(self.handle));
+            let _ = cvt(badcurl_sys::curl_multi_cleanup(self.handle));
         }
     }
 }
@@ -838,16 +838,16 @@ impl MultiWaker {
     /// Requires libcurl 7.68.0 or later.
     pub fn wakeup(&self) -> Result<(), MultiError> {
         if let Some(raw) = self.raw.upgrade() {
-            unsafe { cvt(curl_sys::curl_multi_wakeup(raw.handle)) }
+            unsafe { cvt(badcurl_sys::curl_multi_wakeup(raw.handle)) }
         } else {
             // This happens if the RawMulti has already been dropped:
-            Err(MultiError::new(curl_sys::CURLM_BAD_HANDLE))
+            Err(MultiError::new(badcurl_sys::CURLM_BAD_HANDLE))
         }
     }
 }
 
-fn cvt(code: curl_sys::CURLMcode) -> Result<(), MultiError> {
-    if code == curl_sys::CURLM_OK {
+fn cvt(code: badcurl_sys::CURLMcode) -> Result<(), MultiError> {
+    if code == badcurl_sys::CURLM_OK {
         Ok(())
     } else {
         Err(MultiError::new(code))
@@ -921,9 +921,9 @@ impl EasyHandle {
     /// easy handle.
     pub fn set_token(&mut self, token: usize) -> Result<(), Error> {
         unsafe {
-            crate::cvt(curl_sys::curl_easy_setopt(
+            crate::cvt(badcurl_sys::curl_easy_setopt(
                 self.easy.raw(),
-                curl_sys::CURLOPT_PRIVATE,
+                badcurl_sys::CURLOPT_PRIVATE,
                 token,
             ))
         }
@@ -960,7 +960,7 @@ impl EasyHandle {
     }
 
     /// Get a pointer to the raw underlying CURL handle.
-    pub fn raw(&self) -> *mut curl_sys::CURL {
+    pub fn raw(&self) -> *mut badcurl_sys::CURL {
         self.easy.raw()
     }
 }
@@ -985,9 +985,9 @@ impl<H> Easy2Handle<H> {
     /// Same as `EasyHandle::set_token`
     pub fn set_token(&mut self, token: usize) -> Result<(), Error> {
         unsafe {
-            crate::cvt(curl_sys::curl_easy_setopt(
+            crate::cvt(badcurl_sys::curl_easy_setopt(
                 self.easy.raw(),
-                curl_sys::CURLOPT_PRIVATE,
+                badcurl_sys::CURLOPT_PRIVATE,
                 token,
             ))
         }
@@ -1024,7 +1024,7 @@ impl<H> Easy2Handle<H> {
     }
 
     /// Get a pointer to the raw underlying CURL handle.
-    pub fn raw(&self) -> *mut curl_sys::CURL {
+    pub fn raw(&self) -> *mut badcurl_sys::CURL {
         self.easy.raw()
     }
 }
@@ -1041,7 +1041,7 @@ impl DetachGuard {
     fn detach(&mut self) -> Result<(), MultiError> {
         if !self.easy.is_null() {
             unsafe {
-                cvt(curl_sys::curl_multi_remove_handle(
+                cvt(badcurl_sys::curl_multi_remove_handle(
                     self.multi.handle,
                     self.easy,
                 ))?
@@ -1073,8 +1073,8 @@ impl<'multi> Message<'multi> {
     /// handle can be associated with the error type.
     pub fn result(&self) -> Option<Result<(), Error>> {
         unsafe {
-            if (*self.ptr).msg == curl_sys::CURLMSG_DONE {
-                Some(crate::cvt((*self.ptr).data as curl_sys::CURLcode))
+            if (*self.ptr).msg == badcurl_sys::CURLMSG_DONE {
+                Some(crate::cvt((*self.ptr).data as badcurl_sys::CURLcode))
             } else {
                 None
             }
@@ -1137,9 +1137,9 @@ impl<'multi> Message<'multi> {
     pub fn token(&self) -> Result<usize, Error> {
         unsafe {
             let mut p = 0usize;
-            crate::cvt(curl_sys::curl_easy_getinfo(
+            crate::cvt(badcurl_sys::curl_easy_getinfo(
                 (*self.ptr).easy_handle,
-                curl_sys::CURLINFO_PRIVATE,
+                badcurl_sys::CURLINFO_PRIVATE,
                 &mut p,
             ))?;
             Ok(p)
@@ -1161,18 +1161,18 @@ impl Events {
 
     /// Set or unset the whether these events indicate that input is ready.
     pub fn input(&mut self, val: bool) -> &mut Events {
-        self.flag(curl_sys::CURL_CSELECT_IN, val)
+        self.flag(badcurl_sys::CURL_CSELECT_IN, val)
     }
 
     /// Set or unset the whether these events indicate that output is ready.
     pub fn output(&mut self, val: bool) -> &mut Events {
-        self.flag(curl_sys::CURL_CSELECT_OUT, val)
+        self.flag(badcurl_sys::CURL_CSELECT_OUT, val)
     }
 
     /// Set or unset the whether these events indicate that an error has
     /// happened.
     pub fn error(&mut self, val: bool) -> &mut Events {
-        self.flag(curl_sys::CURL_CSELECT_ERR, val)
+        self.flag(badcurl_sys::CURL_CSELECT_ERR, val)
     }
 
     fn flag(&mut self, flag: c_int, val: bool) -> &mut Events {
@@ -1188,9 +1188,9 @@ impl Events {
 impl fmt::Debug for Events {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Events")
-            .field("input", &(self.bits & curl_sys::CURL_CSELECT_IN != 0))
-            .field("output", &(self.bits & curl_sys::CURL_CSELECT_OUT != 0))
-            .field("error", &(self.bits & curl_sys::CURL_CSELECT_ERR != 0))
+            .field("input", &(self.bits & badcurl_sys::CURL_CSELECT_IN != 0))
+            .field("output", &(self.bits & badcurl_sys::CURL_CSELECT_OUT != 0))
+            .field("error", &(self.bits & badcurl_sys::CURL_CSELECT_ERR != 0))
             .finish()
     }
 }
@@ -1198,23 +1198,23 @@ impl fmt::Debug for Events {
 impl SocketEvents {
     /// Wait for incoming data. For the socket to become readable.
     pub fn input(&self) -> bool {
-        self.bits & curl_sys::CURL_POLL_IN == curl_sys::CURL_POLL_IN
+        self.bits & badcurl_sys::CURL_POLL_IN == badcurl_sys::CURL_POLL_IN
     }
 
     /// Wait for outgoing data. For the socket to become writable.
     pub fn output(&self) -> bool {
-        self.bits & curl_sys::CURL_POLL_OUT == curl_sys::CURL_POLL_OUT
+        self.bits & badcurl_sys::CURL_POLL_OUT == badcurl_sys::CURL_POLL_OUT
     }
 
     /// Wait for incoming and outgoing data. For the socket to become readable
     /// or writable.
     pub fn input_and_output(&self) -> bool {
-        self.bits & curl_sys::CURL_POLL_INOUT == curl_sys::CURL_POLL_INOUT
+        self.bits & badcurl_sys::CURL_POLL_INOUT == badcurl_sys::CURL_POLL_INOUT
     }
 
     /// The specified socket/file descriptor is no longer used by libcurl.
     pub fn remove(&self) -> bool {
-        self.bits & curl_sys::CURL_POLL_REMOVE == curl_sys::CURL_POLL_REMOVE
+        self.bits & badcurl_sys::CURL_POLL_REMOVE == badcurl_sys::CURL_POLL_REMOVE
     }
 }
 
@@ -1232,7 +1232,7 @@ impl WaitFd {
     /// Constructs an empty (invalid) WaitFd.
     pub fn new() -> WaitFd {
         WaitFd {
-            inner: curl_sys::curl_waitfd {
+            inner: badcurl_sys::curl_waitfd {
                 fd: 0,
                 events: 0,
                 revents: 0,
@@ -1250,7 +1250,7 @@ impl WaitFd {
     ///
     /// Corresponds to `CURL_WAIT_POLLIN`.
     pub fn poll_on_read(&mut self, val: bool) -> &mut WaitFd {
-        self.flag(curl_sys::CURL_WAIT_POLLIN, val)
+        self.flag(badcurl_sys::CURL_WAIT_POLLIN, val)
     }
 
     /// Indicate that the socket should poll on high priority read events such
@@ -1258,7 +1258,7 @@ impl WaitFd {
     ///
     /// Corresponds to `CURL_WAIT_POLLPRI`.
     pub fn poll_on_priority_read(&mut self, val: bool) -> &mut WaitFd {
-        self.flag(curl_sys::CURL_WAIT_POLLPRI, val)
+        self.flag(badcurl_sys::CURL_WAIT_POLLPRI, val)
     }
 
     /// Indicate that the socket should poll on write events such as the socket
@@ -1266,7 +1266,7 @@ impl WaitFd {
     ///
     /// Corresponds to `CURL_WAIT_POLLOUT`.
     pub fn poll_on_write(&mut self, val: bool) -> &mut WaitFd {
-        self.flag(curl_sys::CURL_WAIT_POLLOUT, val)
+        self.flag(badcurl_sys::CURL_WAIT_POLLOUT, val)
     }
 
     fn flag(&mut self, flag: c_short, val: bool) -> &mut WaitFd {
@@ -1281,19 +1281,19 @@ impl WaitFd {
     /// After a call to `wait`, returns `true` if `poll_on_read` was set and a
     /// read event occured.
     pub fn received_read(&self) -> bool {
-        self.inner.revents & curl_sys::CURL_WAIT_POLLIN == curl_sys::CURL_WAIT_POLLIN
+        self.inner.revents & badcurl_sys::CURL_WAIT_POLLIN == badcurl_sys::CURL_WAIT_POLLIN
     }
 
     /// After a call to `wait`, returns `true` if `poll_on_priority_read` was set and a
     /// priority read event occured.
     pub fn received_priority_read(&self) -> bool {
-        self.inner.revents & curl_sys::CURL_WAIT_POLLPRI == curl_sys::CURL_WAIT_POLLPRI
+        self.inner.revents & badcurl_sys::CURL_WAIT_POLLPRI == badcurl_sys::CURL_WAIT_POLLPRI
     }
 
     /// After a call to `wait`, returns `true` if `poll_on_write` was set and a
     /// write event occured.
     pub fn received_write(&self) -> bool {
-        self.inner.revents & curl_sys::CURL_WAIT_POLLOUT == curl_sys::CURL_WAIT_POLLOUT
+        self.inner.revents & badcurl_sys::CURL_WAIT_POLLOUT == badcurl_sys::CURL_WAIT_POLLOUT
     }
 }
 
@@ -1302,16 +1302,16 @@ impl From<pollfd> for WaitFd {
     fn from(pfd: pollfd) -> WaitFd {
         let mut events = 0;
         if pfd.events & POLLIN == POLLIN {
-            events |= curl_sys::CURL_WAIT_POLLIN;
+            events |= badcurl_sys::CURL_WAIT_POLLIN;
         }
         if pfd.events & POLLPRI == POLLPRI {
-            events |= curl_sys::CURL_WAIT_POLLPRI;
+            events |= badcurl_sys::CURL_WAIT_POLLPRI;
         }
         if pfd.events & POLLOUT == POLLOUT {
-            events |= curl_sys::CURL_WAIT_POLLOUT;
+            events |= badcurl_sys::CURL_WAIT_POLLOUT;
         }
         WaitFd {
-            inner: curl_sys::curl_waitfd {
+            inner: badcurl_sys::curl_waitfd {
                 fd: pfd.fd,
                 events,
                 revents: 0,

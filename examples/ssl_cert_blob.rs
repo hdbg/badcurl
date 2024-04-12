@@ -4,7 +4,7 @@ use std::io::{stdout, Read, Write};
 use std::path::Path;
 
 use anyhow::{bail, Result};
-use curl::easy::Easy;
+use badcurl::easy::Easy;
 
 fn read_file(path: impl AsRef<Path>) -> Result<Vec<u8>> {
     let mut f = File::open(path)?;

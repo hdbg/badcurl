@@ -12,7 +12,7 @@
 ```rust
 use std::io::{stdout, Write};
 
-use curl::easy::Easy;
+use badcurl::easy::Easy;
 
 // Print a web page onto stdout
 fn main() {
@@ -29,7 +29,7 @@ fn main() {
 ```
 
 ```rust
-use curl::easy::Easy;
+use badcurl::easy::Easy;
 
 // Capture output into a local `Vec`.
 fn main() {
@@ -54,7 +54,7 @@ This interface works particularly well with types that implement `Read`.
 
 ```rust,no_run
 use std::io::Read;
-use curl::easy::Easy;
+use badcurl::easy::Easy;
 
 fn main() {
     let mut data = "this is the body".as_bytes();
@@ -77,7 +77,7 @@ fn main() {
 Custom headers can be specified as part of the request:
 
 ```rust,no_run
-use curl::easy::{Easy, List};
+use badcurl::easy::{Easy, List};
 
 fn main() {
     let mut easy = Easy::new();
@@ -96,7 +96,7 @@ The handle can be re-used across multiple requests. Curl will attempt to
 keep the connections alive.
 
 ```rust,no_run
-use curl::easy::Easy;
+use badcurl::easy::Easy;
 
 fn main() {
     let mut handle = Easy::new();

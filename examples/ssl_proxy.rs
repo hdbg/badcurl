@@ -1,7 +1,7 @@
 use anyhow::Result;
 
 fn main() -> Result<()> {
-    let mut handle = curl::easy::Easy::new();
+    let mut handle = badcurl::easy::Easy::new();
 
     let proxy_url = "https://fwdproxy";
     let proxy_port = 8082;

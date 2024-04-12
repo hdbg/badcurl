@@ -18,7 +18,7 @@
 //! ```rust,no_run
 //! use std::io::{stdout, Write};
 //!
-//! use curl::easy::Easy;
+//! use badcurl::easy::Easy;
 //!
 //! // Write the contents of rust-lang.org to stdout
 //! let mut easy = Easy::new();
@@ -100,7 +100,7 @@ pub fn init() {
         openssl_sys::init();
 
         unsafe {
-            assert_eq!(curl_sys::curl_global_init(curl_sys::CURL_GLOBAL_ALL), 0);
+            assert_eq!(badcurl_sys::curl_global_init(badcurl_sys::CURL_GLOBAL_ALL), 0);
         }
 
         #[cfg(test)]
@@ -158,8 +158,8 @@ unsafe fn opt_str<'a>(ptr: *const libc::c_char) -> Option<&'a str> {
     }
 }
 
-fn cvt(r: curl_sys::CURLcode) -> Result<(), Error> {
-    if r == curl_sys::CURLE_OK {
+fn cvt(r: badcurl_sys::CURLcode) -> Result<(), Error> {
+    if r == badcurl_sys::CURLE_OK {
         Ok(())
     } else {
         Err(Error::new(r))

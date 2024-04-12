@@ -1,23 +1,18 @@
 [package]
-name = "curl-sys"
+name = "badcurl-sys"
 version = "0.4.72+curl-8.6.0"
 authors = ["Alex Crichton <alex@alexcrichton.com>"]
 links = "curl"
 build = "build.rs"
 license = "MIT"
 repository = "https://github.com/alexcrichton/curl-rust"
-description = "Native bindings to the libcurl library"
+description = "Native bindings to the libcurl-impersonate library"
 documentation = "https://docs.rs/curl-sys"
 categories = ["external-ffi-bindings"]
 edition = "2018"
-exclude = ["curl/docs/", "curl/tests/"]
-
-[badges]
-travis-ci = { repository = "alexcrichton/curl-rust" }
-appveyor = { repository = "alexcrichton/curl-rust" }
 
 [lib]
-name = "curl_sys"
+name = "badcurl_sys"
 path = "lib.rs"
 
 [dependencies]
@@ -40,18 +35,21 @@ windows-sys = { version = "0.52", features = ["Win32_Networking_WinSock"] }
 vcpkg = "0.2"
 
 [build-dependencies]
-pkg-config = "0.3.3"
-cc = "1.0"
+reqwest = { version = "0.12.3", features = ["blocking", "json"] }
+serde = { version = "1.0.197", features = ["derive"] }
+serde_json = "1.0.115"
+target-lexicon = "0.12.14"
+tar = "0.4.40"
+flate2 = "1.0.28"
+
 
 [features]
-default = ["ssl"]
-ssl = ["openssl-sys"]
+default = []
 http2 = ["libnghttp2-sys"]
 mesalink = []
 rustls = ["rustls-ffi"]
 static-curl = []
 windows-static-ssl = []
-static-ssl = ["openssl-sys/vendored"]
 spnego = []
 force-system-lib-on-osx = []
 protocol-ftp = []
@@ -59,3 +57,4 @@ zlib-ng-compat = ["libz-sys/zlib-ng", "static-curl"]
 upkeep_7_62_0 = []
 poll_7_68_0 = []
 ntlm = []
+

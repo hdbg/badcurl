@@ -1,4 +1,4 @@
-use curl::Version;
+use badcurl::Version;
 use std::time::Duration;
 
 macro_rules! t {
@@ -10,7 +10,7 @@ macro_rules! t {
     };
 }
 
-use curl::easy::{Easy, Form, List};
+use badcurl::easy::{Easy, Form, List};
 
 use crate::server::Server;
 mod server;

@@ -1,7 +1,7 @@
-use curl::easy::Easy;
+use badcurl::easy::Easy;
 use std::io::{stdout, Write};
 
-fn main() -> Result<(), curl::Error> {
+fn main() -> Result<(), badcurl::Error> {
     let mut curl = Easy::new();
 
     curl.url("https://example.com")?;

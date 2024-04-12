@@ -1,4 +1,4 @@
-use curl::easy::Easy;
+use badcurl::easy::Easy;
 
 pub extern "C" fn hook() {
     let mut easy = Easy::new();
@@ -8,7 +8,7 @@ pub extern "C" fn hook() {
 }
 
 fn main() {
-    curl::init();
+    badcurl::init();
     hook();
     unsafe {
         libc::atexit(hook);

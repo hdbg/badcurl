@@ -4,8 +4,8 @@ use std::collections::HashMap;
 use std::io::{Cursor, Read};
 use std::time::Duration;
 
-use curl::easy::{Easy, List};
-use curl::multi::Multi;
+use badbadcurl::easy::{Easy, List};
+use badbadcurl::multi::Multi;
 
 macro_rules! t {
     ($e:expr) => {
@@ -86,7 +86,7 @@ fn smoke2() {
 
 #[test]
 fn upload_lots() {
-    use curl::multi::{Events, Socket, SocketEvents};
+    use badbadcurl::multi::{Events, Socket, SocketEvents};
 
     #[derive(Debug)]
     enum Message {
@@ -229,12 +229,12 @@ fn upload_lots() {
 }
 
 // Tests passing raw file descriptors to Multi::wait. The test is limited to Linux only as the
-// semantics of the underlying poll(2) system call used by curl apparently differ on other
+// semantics of the underlying poll(2) system call used by badcurl apparently differ on other
 // platforms, making the test fail.
 #[cfg(target_os = "linux")]
 #[test]
 fn waitfds() {
-    use curl::multi::WaitFd;
+    use badbadcurl::multi::WaitFd;
     use std::fs::File;
     use std::os::unix::io::AsRawFd;
 
@@ -262,13 +262,13 @@ fn waitfds() {
 }
 
 // Tests passing raw file descriptors to Multi::wait. The test is limited to Linux only as the
-// semantics of the underlying poll(2) system call used by curl apparently differ on other
+// semantics of the underlying poll(2) system call used by badcurl apparently differ on other
 // platforms, making the test fail.
 #[cfg(feature = "poll_7_68_0")]
 #[cfg(target_os = "linux")]
 #[test]
 fn pollfds() {
-    use curl::multi::WaitFd;
+    use badbadcurl::multi::WaitFd;
     use std::fs::File;
     use std::os::unix::io::AsRawFd;
 

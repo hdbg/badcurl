@@ -3,12 +3,12 @@
 //! This example is a Rust adaptation of the [C example of the same
 //! name](https://curl.se/libcurl/c/https.html).
 
-extern crate curl;
+extern crate badcurl;
 
-use curl::easy::Easy;
+use badcurl::easy::Easy;
 use std::io::{stdout, Write};
 
-fn main() -> Result<(), curl::Error> {
+fn main() -> Result<(), badcurl::Error> {
     let mut curl = Easy::new();
 
     curl.url("https://example.com/")?;

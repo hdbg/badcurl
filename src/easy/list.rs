@@ -6,21 +6,21 @@ use crate::Error;
 
 /// A linked list of a strings
 pub struct List {
-    raw: *mut curl_sys::curl_slist,
+    raw: *mut badcurl_sys::curl_slist,
 }
 
 /// An iterator over `List`
 #[derive(Clone)]
 pub struct Iter<'a> {
     _me: &'a List,
-    cur: *mut curl_sys::curl_slist,
+    cur: *mut badcurl_sys::curl_slist,
 }
 
-pub fn raw(list: &List) -> *mut curl_sys::curl_slist {
+pub fn raw(list: &List) -> *mut badcurl_sys::curl_slist {
     list.raw
 }
 
-pub unsafe fn from_raw(raw: *mut curl_sys::curl_slist) -> List {
+pub unsafe fn from_raw(raw: *mut badcurl_sys::curl_slist) -> List {
     List { raw }
 }
 
@@ -38,7 +38,7 @@ impl List {
     pub fn append(&mut self, data: &str) -> Result<(), Error> {
         let data = CString::new(data)?;
         unsafe {
-            let raw = curl_sys::curl_slist_append(self.raw, data.as_ptr());
+            let raw = badcurl_sys::curl_slist_append(self.raw, data.as_ptr());
             assert!(!raw.is_null());
             self.raw = raw;
             Ok(())
@@ -73,7 +73,7 @@ impl<'a> IntoIterator for &'a List {
 
 impl Drop for List {
     fn drop(&mut self) {
-        unsafe { curl_sys::curl_slist_free_all(self.raw) }
+        unsafe { badcurl_sys::curl_slist_free_all(self.raw) }
     }
 }
 

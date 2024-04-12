@@ -31,7 +31,7 @@ use crate::Error;
 /// Creating a handle which can be used later
 ///
 /// ```
-/// use curl::easy::Easy;
+/// use badcurl::easy::Easy;
 ///
 /// let handle = Easy::new();
 /// ```
@@ -41,7 +41,7 @@ use crate::Error;
 /// ```
 /// use std::io::{stdout, Write};
 ///
-/// use curl::easy::Easy;
+/// use badcurl::easy::Easy;
 ///
 /// let mut handle = Easy::new();
 /// handle.url("https://www.rust-lang.org/").unwrap();
@@ -55,7 +55,7 @@ use crate::Error;
 /// Collect all output of an HTTP request to a vector.
 ///
 /// ```
-/// use curl::easy::Easy;
+/// use badcurl::easy::Easy;
 ///
 /// let mut data = Vec::new();
 /// let mut handle = Easy::new();
@@ -216,7 +216,7 @@ impl Easy {
     ///
     /// ```
     /// use std::io::{stdout, Write};
-    /// use curl::easy::Easy;
+    /// use badcurl::easy::Easy;
     ///
     /// let mut handle = Easy::new();
     /// handle.url("https://www.rust-lang.org/").unwrap();
@@ -230,7 +230,7 @@ impl Easy {
     ///
     /// ```
     /// use std::io::{stdout, Write};
-    /// use curl::easy::Easy;
+    /// use badcurl::easy::Easy;
     ///
     /// let mut buf = Vec::new();
     /// let mut handle = Easy::new();
@@ -287,7 +287,7 @@ impl Easy {
     ///
     /// ```no_run
     /// use std::io::{stdin, Read};
-    /// use curl::easy::Easy;
+    /// use badcurl::easy::Easy;
     ///
     /// let mut handle = Easy::new();
     /// handle.url("https://example.com/login").unwrap();
@@ -302,7 +302,7 @@ impl Easy {
     ///
     /// ```no_run
     /// use std::io::{stdin, Read};
-    /// use curl::easy::Easy;
+    /// use badcurl::easy::Easy;
     ///
     /// let mut data_to_upload = &b"foobar"[..];
     /// let mut handle = Easy::new();
@@ -501,7 +501,7 @@ impl Easy {
     /// ```
     /// use std::str;
     ///
-    /// use curl::easy::Easy;
+    /// use badcurl::easy::Easy;
     ///
     /// let mut handle = Easy::new();
     /// handle.url("https://www.rust-lang.org/").unwrap();
@@ -517,7 +517,7 @@ impl Easy {
     /// ```
     /// use std::str;
     ///
-    /// use curl::easy::Easy;
+    /// use badcurl::easy::Easy;
     ///
     /// let mut headers = Vec::new();
     /// let mut handle = Easy::new();
@@ -1381,7 +1381,7 @@ impl Easy {
         // invoking `FnMut`closures behind a `&self` pointer. This flag acts as
         // our own `RefCell` borrow flag sorta.
         if self.inner.get_ref().running.get() {
-            return Err(Error::new(curl_sys::CURLE_FAILED_INIT));
+            return Err(Error::new(badcurl_sys::CURLE_FAILED_INIT));
         }
 
         self.inner.get_ref().running.set(true);
@@ -1461,7 +1461,7 @@ impl Easy {
     }
 
     /// Same as [`Easy2::raw`](struct.Easy2.html#method.raw)
-    pub fn raw(&self) -> *mut curl_sys::CURL {
+    pub fn raw(&self) -> *mut badcurl_sys::CURL {
         self.inner.raw()
     }
 
