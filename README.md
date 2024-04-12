@@ -1,6 +1,6 @@
-# curl-rust
+# badcurl
 
-[libcurl] bindings for Rust
+[libcurl-impersonate] bindings for Rust
 
 [![Latest Version](https://img.shields.io/crates/v/curl.svg)](https://crates.io/crates/curl)
 [![Documentation](https://docs.rs/curl/badge.svg)](https://docs.rs/curl)
