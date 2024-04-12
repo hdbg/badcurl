@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use badcurl::easy::Easy;
+use badcurl::easy::{Easy, SslOpt};
 
 macro_rules! t {
     ($e:expr) => {
@@ -21,7 +21,11 @@ fn handle() -> Easy {
 #[test]
 fn fingerprint_chrome() {
     let mut handle = handle();
+
+    let mut opt = SslOpt::new();
+    opt.native_ca(true);
+
     t!(handle.url("https://example.com"));
-    t!(handle.impersonate(badcurl::easy::Profile::Chrome100, true));
+    t!(handle.ssl_options(&opt));
     t!(handle.perform());
 }
